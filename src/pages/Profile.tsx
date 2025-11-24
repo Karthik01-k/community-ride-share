@@ -17,10 +17,40 @@ interface Profile {
   total_co2_saved_kg: number;
 }
 
+interface Booking {
+  id: string;
+  trip_id: string;
+  seats_requested: number;
+  pickup_location: string;
+  drop_location: string;
+  status: string;
+  cost_contribution: number | null;
+  trip: {
+    start_location: string;
+    end_location: string;
+    departure_time: string;
+    driver: {
+      name: string;
+    };
+  };
+}
+
+interface Trip {
+  id: string;
+  start_location: string;
+  end_location: string;
+  departure_time: string;
+  seats_available: number;
+  estimated_fuel_cost: number;
+  status: string;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,14 +62,42 @@ const Profile = () => {
       }
 
       try {
-        const { data, error } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", session.user.id)
           .single();
 
-        if (error) throw error;
-        setProfile(data);
+        if (profileError) throw profileError;
+        setProfile(profileData);
+
+        // Fetch bookings as passenger
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from("bookings")
+          .select(`
+            *,
+            trip:trips(
+              start_location,
+              end_location,
+              departure_time,
+              driver:profiles!driver_id(name)
+            )
+          `)
+          .eq("passenger_id", session.user.id)
+          .order("created_at", { ascending: false });
+
+        if (bookingsError) throw bookingsError;
+        setBookings(bookingsData || []);
+
+        // Fetch trips as driver
+        const { data: tripsData, error: tripsError } = await supabase
+          .from("trips")
+          .select("*")
+          .eq("driver_id", session.user.id)
+          .order("created_at", { ascending: false });
+
+        if (tripsError) throw tripsError;
+        setTrips(tripsData || []);
       } catch (error: any) {
         toast({
           title: "Error loading profile",
@@ -179,23 +237,114 @@ const Profile = () => {
               </TabsList>
 
               <TabsContent value="driver">
-                <div className="text-center py-12">
-                  <Car className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">Your posted rides will appear here</p>
-                  <Button asChild className="mt-4 rounded-full" variant="secondary">
-                    <a href="/post-ride">Post a Ride</a>
-                  </Button>
-                </div>
+                {trips.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Car className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">Your posted rides will appear here</p>
+                    <Button asChild className="mt-4 rounded-full" variant="secondary">
+                      <a href="/post-ride">Post a Ride</a>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {trips.map((trip) => (
+                      <Card key={trip.id} className="p-4 border-border/50 hover:border-primary/50 transition-colors">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <MapPin className="h-4 w-4 text-primary" />
+                              <span className="font-semibold">{trip.start_location}</span>
+                              <span className="text-muted-foreground">→</span>
+                              <span className="font-semibold">{trip.end_location}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(trip.departure_time).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                            <div className="flex gap-2 mt-2">
+                              <Badge variant="secondary">{trip.seats_available} seats left</Badge>
+                              <Badge variant={trip.status === "open" ? "default" : "outline"}>
+                                {trip.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/trip/${trip.id}`)}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="passenger">
-                <div className="text-center py-12">
-                  <MapPin className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">Your booked rides will appear here</p>
-                  <Button asChild className="mt-4 rounded-full">
-                    <a href="/find-rides">Find Rides</a>
-                  </Button>
-                </div>
+                {bookings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MapPin className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">Your booked rides will appear here</p>
+                    <Button asChild className="mt-4 rounded-full">
+                      <a href="/find-rides">Find Rides</a>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {bookings.map((booking) => (
+                      <Card key={booking.id} className="p-4 border-border/50 hover:border-primary/50 transition-colors">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <MapPin className="h-4 w-4 text-primary" />
+                              <span className="font-semibold">{booking.pickup_location}</span>
+                              <span className="text-muted-foreground">→</span>
+                              <span className="font-semibold">{booking.drop_location}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-1">
+                              Driver: {booking.trip.driver.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(booking.trip.departure_time).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                            <div className="flex gap-2 mt-2">
+                              <Badge variant="secondary">{booking.seats_requested} seat(s)</Badge>
+                              <Badge 
+                                variant={
+                                  booking.status === "confirmed" ? "default" :
+                                  booking.status === "pending" ? "outline" :
+                                  "destructive"
+                                }
+                              >
+                                {booking.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/trip/${booking.trip_id}`)}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </Card>
