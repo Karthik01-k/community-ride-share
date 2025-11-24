@@ -36,6 +36,7 @@ const TripDetail = () => {
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [seatsRequested, setSeatsRequested] = useState("1");
+  const [existingBooking, setExistingBooking] = useState<any>(null);
 
   useEffect(() => {
     const checkAuthAndLoadTrip = async () => {
@@ -58,6 +59,17 @@ const TripDetail = () => {
 
         if (error) throw error;
         setTrip(data);
+
+        // Check for existing booking
+        const { data: bookingData } = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("trip_id", id)
+          .eq("passenger_id", session.user.id)
+          .in("status", ["pending", "confirmed"])
+          .maybeSingle();
+
+        setExistingBooking(bookingData);
       } catch (error: any) {
         toast({
           title: "Error loading trip",
@@ -85,6 +97,16 @@ const TripDetail = () => {
         toast({
           title: "Cannot book own trip",
           description: "You cannot book a ride you posted",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for existing booking
+      if (existingBooking) {
+        toast({
+          title: "Already booked",
+          description: "You already have a booking for this trip",
           variant: "destructive",
         });
         return;
@@ -276,9 +298,13 @@ const TripDetail = () => {
                   onClick={handleBooking}
                   className="w-full rounded-full" 
                   size="lg"
-                  disabled={bookingLoading}
+                  disabled={bookingLoading || !!existingBooking}
                 >
-                  {bookingLoading ? "Requesting..." : "Request to Book"}
+                  {existingBooking 
+                    ? `Already Booked (${existingBooking.status})` 
+                    : bookingLoading 
+                    ? "Requesting..." 
+                    : "Request to Book"}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">

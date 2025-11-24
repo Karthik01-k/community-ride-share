@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Star, Leaf, TrendingUp, Car, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { BookingRequests } from "@/components/BookingRequests";
 
 interface Profile {
   name: string;
@@ -43,6 +44,17 @@ interface Trip {
   seats_available: number;
   estimated_fuel_cost: number;
   status: string;
+  bookings?: Array<{
+    id: string;
+    seats_requested: number;
+    pickup_location: string;
+    drop_location: string;
+    status: string;
+    passenger: {
+      name: string;
+      rating: number;
+    };
+  }>;
 }
 
 const Profile = () => {
@@ -89,10 +101,20 @@ const Profile = () => {
         if (bookingsError) throw bookingsError;
         setBookings(bookingsData || []);
 
-        // Fetch trips as driver
+        // Fetch trips as driver with bookings
         const { data: tripsData, error: tripsError } = await supabase
           .from("trips")
-          .select("*")
+          .select(`
+            *,
+            bookings(
+              id,
+              seats_requested,
+              pickup_location,
+              drop_location,
+              status,
+              passenger:profiles!passenger_id(name, rating)
+            )
+          `)
           .eq("driver_id", session.user.id)
           .order("created_at", { ascending: false });
 
@@ -111,6 +133,47 @@ const Profile = () => {
 
     checkAuthAndLoadProfile();
   }, [navigate, toast]);
+
+  const refreshData = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    // Refresh trips with bookings
+    const { data: tripsData } = await supabase
+      .from("trips")
+      .select(`
+        *,
+        bookings(
+          id,
+          seats_requested,
+          pickup_location,
+          drop_location,
+          status,
+          passenger:profiles!passenger_id(name, rating)
+        )
+      `)
+      .eq("driver_id", session.user.id)
+      .order("created_at", { ascending: false });
+
+    if (tripsData) setTrips(tripsData);
+
+    // Refresh bookings
+    const { data: bookingsData } = await supabase
+      .from("bookings")
+      .select(`
+        *,
+        trip:trips(
+          start_location,
+          end_location,
+          departure_time,
+          driver:profiles!driver_id(name)
+        )
+      `)
+      .eq("passenger_id", session.user.id)
+      .order("created_at", { ascending: false });
+
+    if (bookingsData) setBookings(bookingsData);
+  };
 
   if (loading) {
     return (
@@ -248,40 +311,54 @@ const Profile = () => {
                 ) : (
                   <div className="space-y-4">
                     {trips.map((trip) => (
-                      <Card key={trip.id} className="p-4 border-border/50 hover:border-primary/50 transition-colors">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <MapPin className="h-4 w-4 text-primary" />
-                              <span className="font-semibold">{trip.start_location}</span>
-                              <span className="text-muted-foreground">→</span>
-                              <span className="font-semibold">{trip.end_location}</span>
+                      <div key={trip.id} className="space-y-4">
+                        <Card className="p-4 border-border/50 hover:border-primary/50 transition-colors">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <MapPin className="h-4 w-4 text-primary" />
+                                <span className="font-semibold">{trip.start_location}</span>
+                                <span className="text-muted-foreground">→</span>
+                                <span className="font-semibold">{trip.end_location}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(trip.departure_time).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                              <div className="flex gap-2 mt-2">
+                                <Badge variant="secondary">{trip.seats_available} seats left</Badge>
+                                <Badge variant={trip.status === "open" ? "default" : "outline"}>
+                                  {trip.status}
+                                </Badge>
+                                {trip.bookings && trip.bookings.filter(b => b.status === "pending").length > 0 && (
+                                  <Badge variant="default" className="bg-accent">
+                                    {trip.bookings.filter(b => b.status === "pending").length} pending
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(trip.departure_time).toLocaleDateString("en-IN", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                            <div className="flex gap-2 mt-2">
-                              <Badge variant="secondary">{trip.seats_available} seats left</Badge>
-                              <Badge variant={trip.status === "open" ? "default" : "outline"}>
-                                {trip.status}
-                              </Badge>
-                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/trip/${trip.id}`)}
+                            >
+                              View
+                            </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/trip/${trip.id}`)}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      </Card>
+                        </Card>
+                        {trip.bookings && trip.bookings.length > 0 && (
+                          <BookingRequests
+                            tripId={trip.id}
+                            bookings={trip.bookings}
+                            onUpdate={refreshData}
+                          />
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
