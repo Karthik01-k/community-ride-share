@@ -9,13 +9,19 @@ import { Label } from "@/components/ui/label";
 import { MapPin, Calendar, User, Car, IndianRupee, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { RouteMap } from "@/components/RouteMap";
 
 interface TripDetail {
   id: string;
   start_location: string;
   end_location: string;
+  start_coords: { lat: number; lng: number };
+  end_coords: { lat: number; lng: number };
+  route_polyline: string | null;
+  total_distance_km: number | null;
   departure_time: string;
   seats_available: number;
+  seats_total: number;
   estimated_fuel_cost: number;
   driver: {
     id: string;
@@ -58,7 +64,11 @@ const TripDetail = () => {
           .single();
 
         if (error) throw error;
-        setTrip(data);
+        setTrip({
+          ...data,
+          start_coords: data.start_coords as { lat: number; lng: number },
+          end_coords: data.end_coords as { lat: number; lng: number },
+        });
 
         // Check for existing booking
         const { data: bookingData } = await supabase
@@ -113,10 +123,40 @@ const TripDetail = () => {
       }
 
       const seats = parseInt(seatsRequested);
+      if (isNaN(seats) || seats < 1) {
+        toast({
+          title: "Invalid seats",
+          description: "Please enter a valid number of seats",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (seats > trip.seats_available) {
         toast({
           title: "Not enough seats",
           description: `Only ${trip.seats_available} seats available`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if total confirmed bookings + this request would exceed available seats
+      const { data: confirmedBookings } = await supabase
+        .from("bookings")
+        .select("seats_requested")
+        .eq("trip_id", trip.id)
+        .in("status", ["pending", "confirmed"]);
+
+      const totalBookedSeats = confirmedBookings?.reduce(
+        (sum, booking) => sum + booking.seats_requested,
+        0
+      ) || 0;
+
+      if (totalBookedSeats + seats > trip.seats_total) {
+        toast({
+          title: "Not enough seats",
+          description: `Only ${trip.seats_total - totalBookedSeats} seats remaining after pending bookings`,
           variant: "destructive",
         });
         return;
@@ -191,6 +231,30 @@ const TripDetail = () => {
       <div className="container mx-auto px-4 pt-24 pb-16 max-w-4xl">
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+            {trip.start_coords && trip.end_coords && (
+              <Card className="p-6 shadow-elevated border-border/50">
+                <h2 className="text-2xl font-bold mb-4">Route</h2>
+                <RouteMap
+                  origin={trip.start_coords}
+                  destination={trip.end_coords}
+                  polyline={trip.route_polyline || undefined}
+                  className="w-full h-[350px] rounded-lg"
+                />
+                {trip.total_distance_km && (
+                  <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>{trip.total_distance_km.toFixed(1)} km</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <IndianRupee className="h-4 w-4" />
+                      <span>₹{(trip.estimated_fuel_cost / trip.total_distance_km).toFixed(1)}/km</span>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
+
             <Card className="p-8 shadow-elevated border-border/50">
               <div className="space-y-6">
                 <div>
