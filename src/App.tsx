@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AppLayout } from "./components/AppLayout";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import FindRides from "./pages/FindRides";
@@ -20,12 +21,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/find-rides" element={<FindRides />} />
-          <Route path="/post-ride" element={<PostRide />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/trip/:id" element={<TripDetail />} />
+          <Route path="/" element={<AppLayout><Landing /></AppLayout>} />
+          <Route path="/find-rides" element={<AppLayout><FindRides /></AppLayout>} />
+          <Route path="/post-ride" element={<AppLayout><PostRide /></AppLayout>} />
+          <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
+          <Route path="/trip/:id" element={<AppLayout><TripDetail /></AppLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
