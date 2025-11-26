@@ -10,6 +10,7 @@ import { MapPin, Calendar, User, Car, IndianRupee, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RouteMap } from "@/components/RouteMap";
+import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 
 interface TripDetail {
   id: string;
@@ -43,6 +44,25 @@ const TripDetail = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [seatsRequested, setSeatsRequested] = useState("1");
   const [existingBooking, setExistingBooking] = useState<any>(null);
+  const [userId, setUserId] = useState<string | undefined>();
+
+  // Set up realtime bookings listener
+  useRealtimeBookings({
+    userId,
+    onBookingUpdate: async () => {
+      // Reload existing booking if present
+      if (userId && id) {
+        const { data } = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("trip_id", id)
+          .eq("passenger_id", userId)
+          .maybeSingle();
+        
+        setExistingBooking(data);
+      }
+    },
+  });
 
   useEffect(() => {
     const checkAuthAndLoadTrip = async () => {
@@ -51,6 +71,8 @@ const TripDetail = () => {
         navigate("/auth");
         return;
       }
+
+      setUserId(session.user.id);
 
       try {
         const { data, error } = await supabase
