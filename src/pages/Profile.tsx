@@ -9,6 +9,7 @@ import { User, Star, Leaf, TrendingUp, Car, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BookingRequests } from "@/components/BookingRequests";
+import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 
 interface Profile {
   name: string;
@@ -64,6 +65,54 @@ const Profile = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | undefined>();
+
+  const refreshData = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    // Refresh trips with bookings
+    const { data: tripsData } = await supabase
+      .from("trips")
+      .select(`
+        *,
+        bookings(
+          id,
+          seats_requested,
+          pickup_location,
+          drop_location,
+          status,
+          passenger:profiles!passenger_id(name, rating)
+        )
+      `)
+      .eq("driver_id", session.user.id)
+      .order("created_at", { ascending: false });
+
+    if (tripsData) setTrips(tripsData);
+
+    // Refresh bookings
+    const { data: bookingsData } = await supabase
+      .from("bookings")
+      .select(`
+        *,
+        trip:trips(
+          start_location,
+          end_location,
+          departure_time,
+          driver:profiles!driver_id(name)
+        )
+      `)
+      .eq("passenger_id", session.user.id)
+      .order("created_at", { ascending: false });
+
+    if (bookingsData) setBookings(bookingsData);
+  };
+
+  // Set up realtime bookings listener
+  useRealtimeBookings({
+    userId,
+    onBookingUpdate: refreshData,
+  });
 
   useEffect(() => {
     const checkAuthAndLoadProfile = async () => {
@@ -72,6 +121,8 @@ const Profile = () => {
         navigate("/auth");
         return;
       }
+
+      setUserId(session.user.id);
 
       try {
         const { data: profileData, error: profileError } = await supabase
@@ -133,47 +184,6 @@ const Profile = () => {
 
     checkAuthAndLoadProfile();
   }, [navigate, toast]);
-
-  const refreshData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    // Refresh trips with bookings
-    const { data: tripsData } = await supabase
-      .from("trips")
-      .select(`
-        *,
-        bookings(
-          id,
-          seats_requested,
-          pickup_location,
-          drop_location,
-          status,
-          passenger:profiles!passenger_id(name, rating)
-        )
-      `)
-      .eq("driver_id", session.user.id)
-      .order("created_at", { ascending: false });
-
-    if (tripsData) setTrips(tripsData);
-
-    // Refresh bookings
-    const { data: bookingsData } = await supabase
-      .from("bookings")
-      .select(`
-        *,
-        trip:trips(
-          start_location,
-          end_location,
-          departure_time,
-          driver:profiles!driver_id(name)
-        )
-      `)
-      .eq("passenger_id", session.user.id)
-      .order("created_at", { ascending: false });
-
-    if (bookingsData) setBookings(bookingsData);
-  };
 
   if (loading) {
     return (
