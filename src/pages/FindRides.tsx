@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
 import TripCard from "@/components/TripCard";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Search, MapPin, Calendar } from "lucide-react";
+import { ArrowRight, Search, MapPin, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,13 +14,8 @@ interface Trip {
   departure_time: string;
   seats_available: number;
   estimated_fuel_cost: number;
-  driver: {
-    name: string;
-    rating: number;
-  };
-  vehicle: {
-    type: string;
-  };
+  driver: { name: string; rating: number };
+  vehicle: { type: string };
 }
 
 const FindRides = () => {
@@ -38,13 +30,9 @@ const FindRides = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+      if (!session) { navigate("/auth"); return; }
       fetchTrips();
     };
-
     checkAuth();
   }, [navigate]);
 
@@ -53,140 +41,108 @@ const FindRides = () => {
     try {
       const { data, error } = await supabase
         .from("trips")
-        .select(`
-          *,
-          driver:profiles!driver_id(name, rating),
-          vehicle:vehicles(type)
-        `)
+        .select(`*, driver:profiles!driver_id(name, rating), vehicle:vehicles(type)`)
         .eq("status", "open")
         .gte("departure_time", new Date().toISOString())
         .order("departure_time", { ascending: true })
         .limit(20);
-
       if (error) throw error;
-
       setTrips(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error loading trips",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      toast({ title: "Error loading trips", description: error.message, variant: "destructive" });
+    } finally { setLoading(false); }
   };
 
   const handleSearch = () => {
-    // TODO: Implement filtering logic
-    toast({
-      title: "Search coming soon",
-      description: "Route matching will be available in the next update",
-    });
+    toast({ title: "Search coming soon", description: "Route matching ships next." });
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 pt-24 pb-16">
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Find Your Ride</h1>
-            <p className="text-muted-foreground text-lg">
-              Search for available rides and split costs with fellow travelers
-            </p>
-          </div>
-
-          <Card className="p-6 shadow-card border-border/50">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="from">From</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="from"
-                    placeholder="Starting location"
-                    value={fromLocation}
-                    onChange={(e) => setFromLocation(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="to">To</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="to"
-                    placeholder="Destination"
-                    value={toLocation}
-                    onChange={(e) => setToLocation(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="date"
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <Button 
-              onClick={handleSearch} 
-              className="w-full mt-4 rounded-full"
-              size="lg"
-            >
-              <Search className="mr-2 h-5 w-5" />
-              Search Rides
-            </Button>
-          </Card>
-
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Available Rides</h2>
-            
-            {loading ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading rides...</p>
-              </div>
-            ) : trips.length === 0 ? (
-              <Card className="p-12 text-center shadow-card">
-                <p className="text-muted-foreground text-lg">
-                  No rides available at the moment. Check back later or post your own ride!
-                </p>
-              </Card>
-            ) : (
-              <div className="grid gap-6">
-                {trips.map((trip) => (
-                  <TripCard
-                    key={trip.id}
-                    id={trip.id}
-                    startLocation={trip.start_location}
-                    endLocation={trip.end_location}
-                    departureTime={trip.departure_time}
-                    seatsAvailable={trip.seats_available}
-                    estimatedFuelCost={trip.estimated_fuel_cost}
-                    driverName={trip.driver?.name || "Unknown"}
-                    driverRating={trip.driver?.rating || 0}
-                    vehicleType={trip.vehicle?.type || "car"}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+    <div className="bg-background text-foreground min-h-full">
+      {/* Hero strip */}
+      <section className="bg-[hsl(0_0%_8%)] px-6 md:px-12 lg:px-20 py-16 border-b border-border">
+        <div className="max-w-[1440px] mx-auto">
+          <p className="eyebrow text-giallo mb-4">— BROWSE / OPEN ROUTES</p>
+          <h1 className="font-display text-5xl md:text-7xl text-white leading-[0.95]">
+            FIND YOUR<br/>NEXT RIDE.
+          </h1>
         </div>
-      </div>
+      </section>
+
+      {/* Search bar — flat industrial */}
+      <section className="px-6 md:px-12 lg:px-20 py-10 border-b border-border bg-[hsl(0_0%_10%)]">
+        <div className="max-w-[1440px] mx-auto grid md:grid-cols-[1fr_1fr_1fr_auto] gap-4 items-end">
+          <div>
+            <Label htmlFor="from" className="font-display text-[10px] text-muted-foreground">FROM</Label>
+            <div className="relative mt-2">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-giallo" />
+              <Input id="from" value={fromLocation} onChange={(e) => setFromLocation(e.target.value)}
+                     placeholder="Starting location"
+                     className="pl-10 bg-transparent border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="to" className="font-display text-[10px] text-muted-foreground">TO</Label>
+            <div className="relative mt-2">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white" />
+              <Input id="to" value={toLocation} onChange={(e) => setToLocation(e.target.value)}
+                     placeholder="Destination"
+                     className="pl-10 bg-transparent border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="date" className="font-display text-[10px] text-muted-foreground">DATE</Label>
+            <div className="relative mt-2">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)}
+                     className="pl-10 bg-transparent border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo" />
+            </div>
+          </div>
+          <button onClick={handleSearch} className="btn-giallo h-12">
+            <Search className="h-4 w-4" /> SEARCH
+          </button>
+        </div>
+      </section>
+
+      {/* Results */}
+      <section className="px-6 md:px-12 lg:px-20 py-16">
+        <div className="max-w-[1440px] mx-auto">
+          <div className="flex items-end justify-between mb-10 flex-wrap gap-3">
+            <h2 className="font-display text-3xl md:text-4xl text-foreground">
+              AVAILABLE ROUTES <span className="text-giallo">— {trips.length}</span>
+            </h2>
+            <span className="btn-ghost-arrow">
+              SORT: SOONEST FIRST <ArrowRight className="h-3 w-3" />
+            </span>
+          </div>
+
+          {loading ? (
+            <p className="font-display text-sm text-muted-foreground">LOADING ROUTES…</p>
+          ) : trips.length === 0 ? (
+            <div className="lambo-card p-16 text-center">
+              <p className="font-display text-xl text-foreground mb-2">NO ROUTES OPEN.</p>
+              <p className="text-sm text-muted-foreground">Check back soon or post your own.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {trips.map((trip) => (
+                <TripCard
+                  key={trip.id}
+                  id={trip.id}
+                  startLocation={trip.start_location}
+                  endLocation={trip.end_location}
+                  departureTime={trip.departure_time}
+                  seatsAvailable={trip.seats_available}
+                  estimatedFuelCost={trip.estimated_fuel_cost}
+                  driverName={trip.driver?.name || "Unknown"}
+                  driverRating={trip.driver?.rating || 0}
+                  vehicleType={trip.vehicle?.type || "car"}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

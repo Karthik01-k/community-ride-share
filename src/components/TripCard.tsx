@@ -1,7 +1,4 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, User, Car as CarIcon, IndianRupee } from "lucide-react";
+import { ArrowRight, Calendar, Car as CarIcon, IndianRupee, MapPin, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface TripCardProps {
@@ -28,62 +25,68 @@ const TripCard = ({
   vehicleType,
 }: TripCardProps) => {
   const formattedDate = new Date(departureTime).toLocaleDateString("en-IN", {
-    day: "numeric",
+    day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
 
   return (
-    <Card className="p-6 shadow-card hover:shadow-elevated transition-smooth border-border/50 hover:border-primary/30">
-      <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2 text-foreground">
-              <MapPin className="h-4 w-4 text-primary" />
-              <span className="font-semibold">{startLocation}</span>
+    <Link
+      to={`/trip/${id}`}
+      className="group block lambo-card hover:border-giallo transition-colors"
+    >
+      <div className="grid md:grid-cols-[1fr_auto] gap-0">
+        <div className="p-6 md:p-8 border-r border-border">
+          {/* Route line */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-col items-center">
+              <span className="h-2.5 w-2.5 rounded-full bg-giallo" />
+              <span className="h-10 w-px bg-border" />
+              <span className="h-2.5 w-2.5 rounded-full border border-white" />
             </div>
-            <div className="flex items-center gap-2 text-foreground">
-              <MapPin className="h-4 w-4 text-secondary" />
-              <span className="font-semibold">{endLocation}</span>
+            <div className="flex-1 space-y-7">
+              <div>
+                <p className="font-display text-[10px] text-muted-foreground">FROM</p>
+                <p className="font-display text-lg text-foreground leading-none mt-1">{startLocation}</p>
+              </div>
+              <div>
+                <p className="font-display text-[10px] text-muted-foreground">TO</p>
+                <p className="font-display text-lg text-foreground leading-none mt-1">{endLocation}</p>
+              </div>
             </div>
           </div>
-          <Badge variant="secondary" className="rounded-full">
-            {seatsAvailable} seats
-          </Badge>
+
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 border-t border-border">
+            <span className="flex items-center gap-2 font-display text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" /> {formattedDate.toUpperCase()}
+            </span>
+            <span className="flex items-center gap-2 font-display text-xs text-muted-foreground">
+              <CarIcon className="h-3.5 w-3.5" /> {vehicleType.toUpperCase()}
+            </span>
+            <span className="flex items-center gap-2 font-display text-xs text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5" /> {driverName.toUpperCase()}
+            </span>
+            <span className="flex items-center gap-1 font-display text-xs text-giallo">
+              <Star className="h-3.5 w-3.5 fill-current" /> {driverRating.toFixed(1)}
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            <span>{formattedDate}</span>
+        <div className="flex md:flex-col items-center justify-between md:justify-center gap-4 p-6 md:p-8 bg-[hsl(0_0%_8%)] md:min-w-[180px]">
+          <div className="text-center">
+            <p className="font-display text-[10px] text-muted-foreground">EST. FUEL</p>
+            <p className="font-display text-3xl text-white leading-none mt-1 flex items-center justify-center">
+              <IndianRupee className="h-5 w-5" />{estimatedFuelCost.toFixed(0)}
+            </p>
+            <p className="font-display text-[10px] text-giallo mt-2">{seatsAvailable} SEATS LEFT</p>
           </div>
-          <div className="flex items-center gap-1">
-            <CarIcon className="h-4 w-4" />
-            <span className="capitalize">{vehicleType}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t border-border">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{driverName}</span>
-            </div>
-            <span className="text-xs text-muted-foreground">⭐ {driverRating.toFixed(1)}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 text-lg font-bold text-foreground">
-              <IndianRupee className="h-4 w-4" />
-              {estimatedFuelCost.toFixed(0)}
-            </div>
-            <Button asChild size="sm" className="rounded-full">
-              <Link to={`/trip/${id}`}>View</Link>
-            </Button>
-          </div>
+          <span className="btn-giallo w-full md:w-auto group-hover:bg-[hsl(var(--giallo-ombra))] group-hover:text-white">
+            VIEW <ArrowRight className="h-4 w-4" />
+          </span>
         </div>
       </div>
-    </Card>
+    </Link>
   );
 };
 
