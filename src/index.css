@@ -2,78 +2,220 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* ============================================================
+   CRSP DESIGN SYSTEM
+   Base theme: Lamborghini — black showroom + Giallo yellow
+   Booking flow theme: ALSO — cream paper + electric violet
+   All semantic colors in HSL.
+   ============================================================ */
 
 @layer base {
   :root {
-    /* Dark theme by default - CRSP colors */
-    --background: 220 20% 10%;
-    --foreground: 210 40% 98%;
+    /* ---- Lamborghini dark stage (default) ---- */
+    --background: 0 0% 12.5%;          /* Carbony #202020 */
+    --foreground: 0 0% 100%;
 
-    --card: 220 18% 14%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 9.4%;                 /* Carbon Deep #181818 */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 220 18% 14%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 9.4%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Teal primary for Find Ride actions */
-    --primary: 180 65% 55%;
-    --primary-foreground: 220 20% 10%;
+    --primary: 45 100% 50%;            /* Giallo Vivo #ffc000 */
+    --primary-foreground: 0 0% 0%;
 
-    /* Green for eco/post ride actions */
-    --secondary: 142 76% 45%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 0 0% 100%;            /* white inverse */
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 210 20% 65%;
+    --muted: 0 0% 19%;                 /* Anvil #313131 */
+    --muted-foreground: 0 0% 75%;
 
-    --accent: 180 65% 55%;
-    --accent-foreground: 220 20% 10%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 25%;
-    --input: 220 15% 25%;
-    --ring: 180 65% 55%;
+    --border: 0 0% 29%;                /* Graphite #494949 */
+    --input: 0 0% 29%;
+    --ring: 45 100% 50%;
 
-    --radius: 1rem;
+    --radius: 0px;                     /* Lambo hard edges */
 
-    /* Custom variables for CRSP */
-    --gradient-hero: linear-gradient(135deg, hsl(180 65% 55% / 0.15), hsl(142 76% 45% / 0.15));
-    --shadow-card: 0 8px 32px hsl(220 20% 5% / 0.4);
-    --shadow-elevated: 0 16px 48px hsl(220 20% 5% / 0.5);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Brand tokens */
+    --giallo: 45 100% 50%;
+    --giallo-ombra: 45 100% 28%;
+    --carbon-deep: 0 0% 9.4%;
+    --pure-black: 0 0% 0%;
+    --steel-mid: 0 0% 49%;
+
+    /* Sidebar (Lambo) */
+    --sidebar-background: 0 0% 9.4%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 45 100% 50%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 45 100% 50%;
+  }
+
+  /* ---- ALSO cream booking surface ---- */
+  .theme-also {
+    --background: 332 38% 98%;         /* Cream #fcf7fa */
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 268 100% 75%;           /* Lilac #c181ff */
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 10%;             /* Obsidian #1a1a1a */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 13%;
+
+    --accent: 268 96% 72%;             /* Electric Violet #ac74fc */
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 0%;
+    --input: 0 0% 13%;
+    --ring: 268 96% 72%;
+
+    --radius: 0.75rem;                 /* cards */
+
+    --plum-shadow: 264 36% 30%;        /* #48316a */
+    --acid-lime: 102 100% 78%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+
+  html, body, #root { @apply h-full; }
 
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  /* Lambo display type */
+  .font-display {
+    font-family: 'Barlow Condensed', 'Inter', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.023em;
+    font-weight: 500;
+  }
+
+  /* ALSO mono labels */
+  .font-mono-label {
+    font-family: 'Space Grotesk', 'Inter', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+}
+
+@layer components {
+  /* ============= LAMBO COMPONENTS ============= */
+
+  /* Solid Giallo CTA */
+  .btn-giallo {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-4 font-display text-sm
+           bg-[hsl(var(--giallo))] text-black border-0
+           hover:bg-[hsl(var(--giallo-ombra))] hover:text-white
+           transition-colors duration-200 rounded-none;
+  }
+
+  /* Ghost link button (arrow) */
+  .btn-ghost-arrow {
+    @apply inline-flex items-center gap-2 font-display text-xs
+           text-inherit hover:text-[hsl(var(--giallo))]
+           transition-colors duration-200;
+  }
+
+  /* Outlined nav button */
+  .btn-outline-lambo {
+    @apply inline-flex items-center gap-2 px-5 py-3 font-display text-xs
+           bg-transparent border border-[hsl(var(--steel-mid))]
+           text-white hover:border-white
+           transition-colors duration-200 rounded-none;
+  }
+
+  /* Section eyebrow */
+  .eyebrow {
+    @apply font-display text-xs text-[hsl(var(--steel-mid))];
+  }
+
+  /* Lambo card surface (flat, hard edge) */
+  .lambo-card {
+    @apply bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-none;
+  }
+
+  /* ============= ALSO COMPONENTS ============= */
+
+  /* Lilac primary pill with violet hard shadow */
+  .btn-lilac {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4
+           font-mono-label text-sm text-black
+           bg-[hsl(268_100%_75%)] border-0 rounded-full
+           transition-transform duration-150 active:translate-y-px;
+    box-shadow: 0 2px 0 0 hsl(264 36% 30%);
+  }
+  .btn-lilac:hover { transform: translateY(-1px); box-shadow: 0 3px 0 0 hsl(264 36% 30%); }
+
+  /* Obsidian dark pill */
+  .btn-obsidian {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4
+           font-mono-label text-sm text-white
+           bg-[hsl(0_0%_10%)] border-0 rounded-full
+           transition-transform duration-150 active:translate-y-px;
+    box-shadow: 0 2px 0 0 hsl(264 36% 30%);
+  }
+  .btn-obsidian:hover { transform: translateY(-1px); box-shadow: 0 3px 0 0 hsl(264 36% 30%); }
+
+  /* Acid lime urgency pill */
+  .btn-lime {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4
+           font-mono-label text-sm text-black
+           bg-[hsl(102_100%_78%)] border-0 rounded-full
+           transition-transform duration-150 active:translate-y-px;
+    box-shadow: 0 2px 0 0 hsl(264 36% 30%);
+  }
+
+  /* ALSO eyebrow label */
+  .also-eyebrow {
+    @apply font-mono-label text-xs text-black;
+  }
+
+  /* ALSO violet section */
+  .also-section-violet {
+    background: hsl(268 96% 72%);
+    color: hsl(0 0% 0%);
+  }
+
+  /* ALSO sticker card (cream w/ hard shadow) */
+  .also-card {
+    @apply bg-white rounded-xl border border-black/10 p-6;
+    box-shadow: 0 2px 0 0 hsl(264 36% 30%);
   }
 }
 
 @layer utilities {
-  .gradient-hero {
-    background: var(--gradient-hero);
-  }
-  
-  .shadow-card {
-    box-shadow: var(--shadow-card);
-  }
-  
-  .shadow-elevated {
-    box-shadow: var(--shadow-elevated);
-  }
-  
-  .transition-smooth {
-    transition: var(--transition-smooth);
-  }
+  .text-giallo { color: hsl(var(--giallo)); }
+  .bg-giallo  { background-color: hsl(var(--giallo)); }
+  .border-giallo { border-color: hsl(var(--giallo)); }
+
+  .shadow-plum-hard { box-shadow: 0 2px 0 0 hsl(264 36% 30%); }
+
+  .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 }

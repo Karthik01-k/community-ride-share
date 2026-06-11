@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car } from "lucide-react";
+import { ArrowRight, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LocationPicker } from "@/components/LocationPicker";
@@ -30,278 +27,178 @@ const PostRide = () => {
   useEffect(() => {
     const calculateRoute = async () => {
       if (!startCoords || !endCoords) return;
-      
       setCalculatingRoute(true);
       try {
         const { data, error } = await supabase.functions.invoke("calculate-route", {
-          body: {
-            origin: startCoords,
-            destination: endCoords,
-          },
+          body: { origin: startCoords, destination: endCoords },
         });
-
         if (error) throw error;
-
         setRouteInfo(data);
-        
-        // Auto-calculate fuel cost (₹8 per km as base estimate)
-        const estimatedCost = Math.round(data.distance_km * 8);
-        setFuelCost(estimatedCost.toString());
-
-        toast({
-          title: "Route calculated",
-          description: `Distance: ${data.distance_km.toFixed(1)} km, Duration: ${Math.round(data.duration_minutes)} min`,
-        });
+        setFuelCost(Math.round(data.distance_km * 8).toString());
+        toast({ title: "Route calculated", description: `${data.distance_km.toFixed(1)} km · ${Math.round(data.duration_minutes)} min` });
       } catch (error: any) {
-        toast({
-          title: "Error calculating route",
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setCalculatingRoute(false);
-      }
+        toast({ title: "Route error", description: error.message, variant: "destructive" });
+      } finally { setCalculatingRoute(false); }
     };
-
     calculateRoute();
   }, [startCoords, endCoords, toast]);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-      }
-    };
-
-    checkAuth();
+    supabase.auth.getSession().then(({ data: { session } }) => { if (!session) navigate("/auth"); });
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!departureTime || !startCoords || !endCoords || !routeInfo) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields and wait for route calculation",
-        variant: "destructive",
-      });
+      toast({ title: "Missing information", description: "Fill in all fields and wait for route.", variant: "destructive" });
       return;
     }
-
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Create a basic vehicle entry if none exists
       const { data: existingVehicle } = await supabase
-        .from("vehicles")
-        .select("id")
-        .eq("owner_id", user.id)
-        .eq("type", vehicleType)
-        .maybeSingle();
+        .from("vehicles").select("id")
+        .eq("owner_id", user.id).eq("type", vehicleType).maybeSingle();
 
       let vehicleId = existingVehicle?.id;
-
       if (!vehicleId) {
-        const { data: newVehicle, error: vehicleError } = await supabase
+        const { data: newVehicle, error: vErr } = await supabase
           .from("vehicles")
-          .insert({
-            owner_id: user.id,
-            type: vehicleType,
-            model: `My ${vehicleType}`,
-            number_plate: "TBD",
-            seats_total: parseInt(seatsAvailable),
-          })
-          .select("id")
-          .single();
-
-        if (vehicleError) throw vehicleError;
+          .insert({ owner_id: user.id, type: vehicleType, model: `My ${vehicleType}`, number_plate: "TBD", seats_total: parseInt(seatsAvailable) })
+          .select("id").single();
+        if (vErr) throw vErr;
         vehicleId = newVehicle.id;
       }
 
-      const { error: tripError } = await supabase.from("trips").insert({
-        driver_id: user.id,
-        vehicle_id: vehicleId,
-        start_location: startLocation,
-        end_location: endLocation,
-        start_coords: startCoords,
-        end_coords: endCoords,
-        route_polyline: routeInfo.polyline,
-        total_distance_km: routeInfo.distance_km,
-        departure_time: departureTime,
-        seats_total: parseInt(seatsAvailable),
-        seats_available: parseInt(seatsAvailable),
-        estimated_fuel_cost: parseFloat(fuelCost),
+      const { error: tErr } = await supabase.from("trips").insert({
+        driver_id: user.id, vehicle_id: vehicleId,
+        start_location: startLocation, end_location: endLocation,
+        start_coords: startCoords, end_coords: endCoords,
+        route_polyline: routeInfo.polyline, total_distance_km: routeInfo.distance_km,
+        departure_time: departureTime, seats_total: parseInt(seatsAvailable),
+        seats_available: parseInt(seatsAvailable), estimated_fuel_cost: parseFloat(fuelCost),
         status: "open",
       });
-
-      if (tripError) throw tripError;
-
-      toast({
-        title: "Ride posted successfully!",
-        description: "Your ride is now visible to other travelers",
-      });
-
+      if (tErr) throw tErr;
+      toast({ title: "Ride posted", description: "Your route is now live." });
       navigate("/find-rides");
     } catch (error: any) {
-      toast({
-        title: "Error posting ride",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally { setLoading(false); }
   };
 
+  const inputCls = "bg-transparent border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo";
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 pt-24 pb-16 max-w-2xl">
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Post Your Ride</h1>
-            <p className="text-muted-foreground text-lg">
-              Share your journey and split fuel costs with fellow travelers
-            </p>
-          </div>
+    <div className="bg-background text-foreground min-h-full">
+      <section className="bg-[hsl(0_0%_8%)] px-6 md:px-12 lg:px-20 py-16 border-b border-border">
+        <div className="max-w-[1440px] mx-auto">
+          <p className="eyebrow text-giallo mb-4">— DRIVER / POST A ROUTE</p>
+          <h1 className="font-display text-5xl md:text-7xl text-white leading-[0.95]">
+            DRIVE THE ROUTE.<br/>SHARE THE COST.
+          </h1>
+        </div>
+      </section>
 
-          <Card className="p-8 shadow-elevated border-border/50">
-            <form onSubmit={handleSubmit} className="space-y-6">
+      <section className="px-6 md:px-12 lg:px-20 py-16">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSubmit} className="lambo-card p-8 md:p-12 space-y-10">
+            <div className="space-y-2">
+              <Label className="font-display text-[10px] text-muted-foreground">01 / START</Label>
               <LocationPicker
-                label="Starting Location"
+                label=""
                 value={startLocation}
-                onChange={(location, coords) => {
-                  setStartLocation(location);
-                  setStartCoords(coords);
-                }}
-                placeholder="Enter pickup location"
+                onChange={(location, coords) => { setStartLocation(location); setStartCoords(coords); }}
+                placeholder="Pickup point"
               />
+            </div>
 
+            <div className="space-y-2">
+              <Label className="font-display text-[10px] text-muted-foreground">02 / DESTINATION</Label>
               <LocationPicker
-                label="Destination"
+                label=""
                 value={endLocation}
-                onChange={(location, coords) => {
-                  setEndLocation(location);
-                  setEndCoords(coords);
-                }}
-                placeholder="Enter destination"
+                onChange={(location, coords) => { setEndLocation(location); setEndCoords(coords); }}
+                placeholder="Drop location"
               />
+            </div>
 
-              {calculatingRoute && (
-                <div className="text-sm text-muted-foreground">
-                  Calculating route...
-                </div>
-              )}
+            {calculatingRoute && <p className="font-display text-xs text-giallo">CALCULATING ROUTE…</p>}
 
-              {routeInfo && startCoords && endCoords && (
-                <div className="space-y-4">
-                  <RouteMap
-                    origin={startCoords}
-                    destination={endCoords}
-                    polyline={routeInfo.polyline}
-                    className="w-full h-[300px] rounded-lg border border-border"
-                  />
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Distance</p>
-                      <p className="text-lg font-semibold">{routeInfo.distance_km.toFixed(1)} km</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Duration</p>
-                      <p className="text-lg font-semibold">{Math.round(routeInfo.duration_minutes)} min</p>
-                    </div>
+            {routeInfo && startCoords && endCoords && (
+              <div className="space-y-4">
+                <RouteMap origin={startCoords} destination={endCoords} polyline={routeInfo.polyline}
+                          className="w-full h-[300px] border border-border" />
+                <div className="grid grid-cols-2 border border-border">
+                  <div className="p-5 border-r border-border">
+                    <p className="font-display text-[10px] text-muted-foreground">DISTANCE</p>
+                    <p className="font-display text-2xl text-foreground mt-1">{routeInfo.distance_km.toFixed(1)} KM</p>
+                  </div>
+                  <div className="p-5">
+                    <p className="font-display text-[10px] text-muted-foreground">DURATION</p>
+                    <p className="font-display text-2xl text-foreground mt-1">{Math.round(routeInfo.duration_minutes)} MIN</p>
                   </div>
                 </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="datetime">Departure Date & Time</Label>
-                <Input
-                  id="datetime"
-                  type="datetime-local"
-                  value={departureTime}
-                  onChange={(e) => setDepartureTime(e.target.value)}
-                  required
-                />
               </div>
+            )}
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="vehicle">Vehicle Type</Label>
-                  <Select value={vehicleType} onValueChange={(value: any) => setVehicleType(value)}>
-                    <SelectTrigger>
-                      <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4" />
-                        <span>{vehicleType}</span>
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="car">Car</SelectItem>
-                      <SelectItem value="bike">Bike</SelectItem>
-                      <SelectItem value="auto">Auto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="datetime" className="font-display text-[10px] text-muted-foreground">03 / DEPARTURE</Label>
+              <Input id="datetime" type="datetime-local" value={departureTime}
+                     onChange={(e) => setDepartureTime(e.target.value)} required className={inputCls} />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="seats">Available Seats</Label>
-                  <Input
-                    id="seats"
-                    type="number"
-                    min="1"
-                    max="7"
-                    value={seatsAvailable}
-                    onChange={(e) => setSeatsAvailable(e.target.value)}
-                    required
-                  />
-                </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="font-display text-[10px] text-muted-foreground">04 / VEHICLE</Label>
+                <Select value={vehicleType} onValueChange={(v: any) => setVehicleType(v)}>
+                  <SelectTrigger className={inputCls}>
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-giallo" />
+                      <span className="font-display uppercase">{vehicleType}</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="car">Car</SelectItem>
+                    <SelectItem value="bike">Bike</SelectItem>
+                    <SelectItem value="auto">Auto</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fuel">Estimated Total Fuel Cost (₹)</Label>
-                <Input
-                  id="fuel"
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  placeholder="Auto-calculated based on distance"
-                  value={fuelCost}
-                  onChange={(e) => setFuelCost(e.target.value)}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Based on ₹8/km. You can adjust this based on your vehicle's fuel efficiency.
-                </p>
+                <Label htmlFor="seats" className="font-display text-[10px] text-muted-foreground">05 / SEATS</Label>
+                <Input id="seats" type="number" min="1" max="7" value={seatsAvailable}
+                       onChange={(e) => setSeatsAvailable(e.target.value)} required className={inputCls} />
               </div>
+            </div>
 
-              <Button 
-                type="submit" 
-                className="w-full rounded-full" 
-                size="lg" 
-                disabled={loading || calculatingRoute || !routeInfo}
-                variant="secondary"
-              >
-                {loading ? "Posting..." : calculatingRoute ? "Calculating route..." : "Post Ride"}
-              </Button>
-            </form>
-          </Card>
+            <div className="space-y-2">
+              <Label htmlFor="fuel" className="font-display text-[10px] text-muted-foreground">06 / FUEL ESTIMATE (₹)</Label>
+              <Input id="fuel" type="number" min="1" step="0.01"
+                     placeholder="Auto from distance" value={fuelCost}
+                     onChange={(e) => setFuelCost(e.target.value)} required className={inputCls} />
+              <p className="text-xs text-muted-foreground">Base ₹8/km — adjust for your vehicle.</p>
+            </div>
 
-          <Card className="p-6 bg-muted/30 border-secondary/20">
-            <h3 className="font-semibold mb-2 flex items-center gap-2">
-              <span className="text-secondary">💡</span> How Cost Sharing Works
-            </h3>
+            <button type="submit" disabled={loading || calculatingRoute || !routeInfo}
+                    className="btn-giallo w-full disabled:opacity-50 h-14">
+              {loading ? "POSTING…" : calculatingRoute ? "CALCULATING…" : "POST RIDE"}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+
+          <div className="mt-8 border-l-2 border-giallo pl-6">
+            <p className="font-display text-xs text-giallo mb-2">— HOW COST SHARING WORKS</p>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              CRSP splits fuel costs fairly based on the distance each passenger shares with you. 
-              If someone joins for half your journey, they'll pay roughly half your fuel cost for that portion. 
-              This keeps it community-focused, not profit-driven.
+              CRSP splits fuel costs by the distance each passenger actually shares with you.
+              Half the journey, roughly half the fuel for that portion. Community-focused. Not profit-driven.
             </p>
-          </Card>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
