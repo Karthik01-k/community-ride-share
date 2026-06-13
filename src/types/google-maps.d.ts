@@ -15,6 +15,12 @@ declare global {
       const Marker: any;
       const Polyline: any;
       const LatLngBounds: any;
+      const Geocoder: any;
+      const DirectionsService: any;
+      const DirectionsRenderer: any;
+      const LatLng: any;
+      const Size: any;
+      const Point: any;
       namespace geometry {
         const encoding: any;
       }
