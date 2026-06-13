@@ -91,7 +91,7 @@ export const LocationPicker = ({ label, value, onChange, placeholder }: Location
             });
           }
 
-          const geocoder = new google.maps.Geocoder();
+          const geocoder = new (google.maps as any).Geocoder();
 
           geocoder.geocode({ location: coords }, (results, status) => {
             if (status === "OK" && results && results[0]) {
