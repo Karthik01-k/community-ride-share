@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton,
@@ -51,12 +52,10 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar">
         {/* Brand */}
         <div className="px-4 py-5 flex items-center gap-3 border-b border-sidebar-border">
-          <div className="h-9 w-9 rounded-xl flex items-center justify-center bg-[hsl(var(--primary))] text-white shrink-0">
-            <Zap className="h-4 w-4" strokeWidth={2.5} />
-          </div>
+          <BrandLogo size="md" />
           {open && (
             <div className="leading-tight">
-              <div className="font-display text-base text-foreground">Let's Raid</div>
+              <div className="font-display text-base text-foreground">RideBuddy</div>
               <div className="text-[10px] text-muted-foreground font-medium">Convenient Rides</div>
             </div>
           )}
