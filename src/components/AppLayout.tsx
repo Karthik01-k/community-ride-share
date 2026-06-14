@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Bell, Search } from "lucide-react";
 
 interface AppLayoutProps {
@@ -16,6 +17,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <header className="h-16 border-b border-border flex items-center justify-between px-4 sm:px-6 sticky top-0 bg-background/90 backdrop-blur z-20">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-foreground" />
+              <BrandLogo size="sm" />
             </div>
 
             <div className="flex items-center gap-2">

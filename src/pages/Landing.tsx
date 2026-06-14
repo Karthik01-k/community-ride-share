@@ -1,10 +1,20 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import { ArrowRight, MapPin, Users, Car, Headphones, Bike, Truck } from "lucide-react";
 
-const Landing = () => (
+const Landing = () => {
+  useEffect(() => {
+    if (window.location.hash === "#hero") {
+      requestAnimationFrame(() => {
+        document.getElementById("hero")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, []);
+
+  return (
   <div className="min-h-full bg-background text-foreground">
     {/* Hero */}
-    <section className="gradient-hero px-6 md:px-12 lg:px-20 py-16 md:py-24">
+    <section id="hero" className="gradient-hero px-6 md:px-12 lg:px-20 py-16 md:py-24">
       <div className="max-w-[1280px] mx-auto grid md:grid-cols-2 gap-12 items-center">
         <div>
           <span className="chip-indigo mb-6">India's friendliest rideshare</span>
