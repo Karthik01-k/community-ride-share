@@ -52,7 +52,11 @@ const ProfilePage = () => {
       if (!session) { navigate("/auth"); return; }
       setUserId(session.user.id);
       try {
-        const { data: p, error: pe } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
+        const { data: p, error: pe } = await supabase
+          .from("profiles")
+          .select("id, name, gender, govt_id_verified, rating, total_rides_as_driver, total_rides_as_passenger, total_co2_saved_kg, created_at, updated_at")
+          .eq("id", session.user.id)
+          .single();
         if (pe) throw pe; setProfile(p);
         await refreshData();
       } catch (error: any) {
