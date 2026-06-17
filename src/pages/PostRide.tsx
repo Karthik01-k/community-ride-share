@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Car } from "lucide-react";
+import { ArrowRight, Car, Bike, CarTaxiFront } from "lucide-react";
+
+type VehicleType = "car" | "bike" | "auto";
+const VEHICLE_META: Record<VehicleType, { label: string; Icon: typeof Car; min: number; max: number; defaultSeats: number }> = {
+  car: { label: "Car", Icon: Car, min: 1, max: 6, defaultSeats: 3 },
+  bike: { label: "Bike", Icon: Bike, min: 1, max: 1, defaultSeats: 1 },
+  auto: { label: "Auto", Icon: CarTaxiFront, min: 1, max: 3, defaultSeats: 3 },
+};
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LocationPicker } from "@/components/LocationPicker";
