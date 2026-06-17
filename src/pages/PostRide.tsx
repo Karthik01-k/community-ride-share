@@ -117,7 +117,7 @@ const PostRide = () => {
     } finally { setLoading(false); }
   };
 
-  const inputCls = "bg-transparent border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo";
+  const inputCls = "bg-transparent text-foreground placeholder:text-muted-foreground border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer";
 
   return (
     <div className="bg-background text-foreground min-h-full">
