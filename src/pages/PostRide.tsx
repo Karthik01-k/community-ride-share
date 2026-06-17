@@ -167,25 +167,49 @@ const PostRide = () => {
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="font-display text-[10px] text-muted-foreground">04 / VEHICLE</Label>
-                <Select value={vehicleType} onValueChange={(v: any) => setVehicleType(v)}>
+                <Select value={vehicleType} onValueChange={(v: any) => handleVehicleChange(v)}>
                   <SelectTrigger className={inputCls}>
                     <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-giallo" />
-                      <span className="font-display uppercase">{vehicleType}</span>
+                      <vMeta.Icon className="h-4 w-4 text-giallo" />
+                      <span className="font-display uppercase">{vMeta.label}</span>
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="car">Car</SelectItem>
-                    <SelectItem value="bike">Bike</SelectItem>
-                    <SelectItem value="auto">Auto</SelectItem>
+                    {(Object.keys(VEHICLE_META) as VehicleType[]).map((k) => {
+                      const M = VEHICLE_META[k];
+                      return (
+                        <SelectItem key={k} value={k}>
+                          <div className="flex items-center gap-2">
+                            <M.Icon className="h-4 w-4" />
+                            <span>{M.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="seats" className="font-display text-[10px] text-muted-foreground">05 / SEATS</Label>
-                <Input id="seats" type="number" min="1" max="7" value={seatsAvailable}
-                       onChange={(e) => setSeatsAvailable(e.target.value)} required className={inputCls} />
+                <Label htmlFor="seats" className="font-display text-[10px] text-muted-foreground">
+                  05 / SEATS (EXCL. DRIVER)
+                </Label>
+                <Input
+                  id="seats"
+                  type="number"
+                  min={vMeta.min}
+                  max={vMeta.max}
+                  value={seatsAvailable}
+                  onChange={(e) => {
+                    const n = Math.max(vMeta.min, Math.min(vMeta.max, parseInt(e.target.value || "0") || vMeta.min));
+                    setSeatsAvailable(String(n));
+                  }}
+                  required
+                  className={inputCls}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {vMeta.label}: {vMeta.min}–{vMeta.max} passenger{vMeta.max > 1 ? "s" : ""} allowed.
+                </p>
               </div>
             </div>
 
