@@ -95,7 +95,7 @@ const FindRides = () => {
             <div className="relative mt-2">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                     className="pl-10 bg-transparent border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo" />
+                     className="pl-10 bg-transparent text-foreground border-x-0 border-t-0 border-b border-border rounded-none h-12 focus-visible:ring-0 focus-visible:border-giallo [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
             </div>
           </div>
           <button onClick={handleSearch} className="btn-giallo h-12">
