@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Car } from "lucide-react";
+import { ArrowRight, Car, Bike, CarTaxiFront } from "lucide-react";
+
+type VehicleType = "car" | "bike" | "auto";
+const VEHICLE_META: Record<VehicleType, { label: string; Icon: typeof Car; min: number; max: number; defaultSeats: number }> = {
+  car: { label: "Car", Icon: Car, min: 1, max: 6, defaultSeats: 3 },
+  bike: { label: "Bike", Icon: Bike, min: 1, max: 1, defaultSeats: 1 },
+  auto: { label: "Auto", Icon: CarTaxiFront, min: 1, max: 3, defaultSeats: 3 },
+};
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LocationPicker } from "@/components/LocationPicker";
@@ -17,8 +24,15 @@ const PostRide = () => {
   const [startCoords, setStartCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [endCoords, setEndCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [departureTime, setDepartureTime] = useState("");
-  const [vehicleType, setVehicleType] = useState<"car" | "bike" | "auto">("car");
+  const [vehicleType, setVehicleType] = useState<VehicleType>("car");
   const [seatsAvailable, setSeatsAvailable] = useState("3");
+
+  const vMeta = VEHICLE_META[vehicleType];
+
+  const handleVehicleChange = (v: VehicleType) => {
+    setVehicleType(v);
+    setSeatsAvailable(String(VEHICLE_META[v].defaultSeats));
+  };
   const [fuelCost, setFuelCost] = useState("");
   const [loading, setLoading] = useState(false);
   const [routeInfo, setRouteInfo] = useState<any>(null);
@@ -153,25 +167,49 @@ const PostRide = () => {
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="font-display text-[10px] text-muted-foreground">04 / VEHICLE</Label>
-                <Select value={vehicleType} onValueChange={(v: any) => setVehicleType(v)}>
+                <Select value={vehicleType} onValueChange={(v: any) => handleVehicleChange(v)}>
                   <SelectTrigger className={inputCls}>
                     <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-giallo" />
-                      <span className="font-display uppercase">{vehicleType}</span>
+                      <vMeta.Icon className="h-4 w-4 text-giallo" />
+                      <span className="font-display uppercase">{vMeta.label}</span>
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="car">Car</SelectItem>
-                    <SelectItem value="bike">Bike</SelectItem>
-                    <SelectItem value="auto">Auto</SelectItem>
+                    {(Object.keys(VEHICLE_META) as VehicleType[]).map((k) => {
+                      const M = VEHICLE_META[k];
+                      return (
+                        <SelectItem key={k} value={k}>
+                          <div className="flex items-center gap-2">
+                            <M.Icon className="h-4 w-4" />
+                            <span>{M.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="seats" className="font-display text-[10px] text-muted-foreground">05 / SEATS</Label>
-                <Input id="seats" type="number" min="1" max="7" value={seatsAvailable}
-                       onChange={(e) => setSeatsAvailable(e.target.value)} required className={inputCls} />
+                <Label htmlFor="seats" className="font-display text-[10px] text-muted-foreground">
+                  05 / SEATS (EXCL. DRIVER)
+                </Label>
+                <Input
+                  id="seats"
+                  type="number"
+                  min={vMeta.min}
+                  max={vMeta.max}
+                  value={seatsAvailable}
+                  onChange={(e) => {
+                    const n = Math.max(vMeta.min, Math.min(vMeta.max, parseInt(e.target.value || "0") || vMeta.min));
+                    setSeatsAvailable(String(n));
+                  }}
+                  required
+                  className={inputCls}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {vMeta.label}: {vMeta.min}–{vMeta.max} passenger{vMeta.max > 1 ? "s" : ""} allowed.
+                </p>
               </div>
             </div>
 
