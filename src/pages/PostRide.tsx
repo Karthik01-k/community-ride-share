@@ -24,8 +24,15 @@ const PostRide = () => {
   const [startCoords, setStartCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [endCoords, setEndCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [departureTime, setDepartureTime] = useState("");
-  const [vehicleType, setVehicleType] = useState<"car" | "bike" | "auto">("car");
+  const [vehicleType, setVehicleType] = useState<VehicleType>("car");
   const [seatsAvailable, setSeatsAvailable] = useState("3");
+
+  const vMeta = VEHICLE_META[vehicleType];
+
+  const handleVehicleChange = (v: VehicleType) => {
+    setVehicleType(v);
+    setSeatsAvailable(String(VEHICLE_META[v].defaultSeats));
+  };
   const [fuelCost, setFuelCost] = useState("");
   const [loading, setLoading] = useState(false);
   const [routeInfo, setRouteInfo] = useState<any>(null);
