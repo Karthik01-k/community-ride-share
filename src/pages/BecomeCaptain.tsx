@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, ShieldCheck, FileCheck, Camera, Check } from "lucide-react";
+import { ArrowLeft, Upload, FileText, ShieldCheck, FileCheck, Camera, Check, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type DocKey = "license" | "rc" | "insurance" | "photos";
