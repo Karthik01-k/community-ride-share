@@ -67,6 +67,20 @@ const PostRide = () => {
       toast({ title: "Missing information", description: "Fill in all fields and wait for route.", variant: "destructive" });
       return;
     }
+    const seatsNum = parseInt(seatsAvailable);
+    if (!Number.isFinite(seatsNum) || seatsNum < vMeta.min || seatsNum > vMeta.max) {
+      toast({
+        title: "Invalid passenger count",
+        description: `${vMeta.label} allows ${vMeta.min}–${vMeta.max} passenger${vMeta.max > 1 ? "s" : ""} (excluding driver).`,
+        variant: "destructive",
+      });
+      return;
+    }
+    const fuelNum = parseFloat(fuelCost);
+    if (!Number.isFinite(fuelNum) || fuelNum <= 0) {
+      toast({ title: "Invalid fuel cost", description: "Enter a positive amount.", variant: "destructive" });
+      return;
+    }
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
