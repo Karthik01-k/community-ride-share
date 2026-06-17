@@ -79,13 +79,29 @@ const BecomeCaptain = () => {
                 className="hidden"
                 onChange={(e) => onFile(d.key, e.target.files?.[0] ?? null)}
               />
-              <button
-                type="button"
-                onClick={() => pick(d.key)}
-                className="text-xs font-semibold text-[hsl(var(--primary))] inline-flex items-center gap-1.5"
-              >
-                {f ? <><Check className="h-3.5 w-3.5" /> Replace</> : <><Upload className="h-3.5 w-3.5" /> Upload</>}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => pick(d.key)}
+                  className="text-xs font-semibold text-[hsl(var(--primary))] inline-flex items-center gap-1.5"
+                >
+                  {f ? <><Check className="h-3.5 w-3.5" /> Replace</> : <><Upload className="h-3.5 w-3.5" /> Upload</>}
+                </button>
+                {f && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = URL.createObjectURL(f);
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    }}
+                    title="View uploaded document"
+                    aria-label={`View ${d.label}`}
+                    className="h-8 w-8 rounded-lg border border-border bg-white inline-flex items-center justify-center text-[hsl(var(--primary))] hover:bg-[hsl(var(--indigo-soft))]"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
